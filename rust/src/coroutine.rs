@@ -15,7 +15,7 @@ use crate::yielding::SpireYield;
 /// - [node.start_coroutine](crate::prelude::StartCoroutine::start_coroutine)
 /// - [node.start_async_task](crate::prelude::StartAsyncTask::start_async_task) (requires feature "async")
 #[derive(GodotClass)]
-#[class(no_init, base = Node)]
+#[class(base = Node)]
 pub struct SpireCoroutine {
 	pub(crate) base: Base<Node>,
 	pub(crate) coroutine: Box<dyn Unpin + Coroutine<(), Yield = SpireYield, Return = Variant>>,
@@ -34,6 +34,13 @@ pub enum PollMode {
 
 #[godot_api]
 impl INode for SpireCoroutine {
+
+	fn init(base: Base<Node>) -> SpireCoroutine {
+		// panic!("Construction of 'SpireCoroutine' by the godot engine is not supported, 'init' is only provided because 'no_init' would break hot-reload. Please see https://github.com/godot-rust/gdext/issues/874")
+		godot_warn!("'SpireCoroutine' is being created via the 'init' function. This is not supported, a dummy coroutine that does nothing is returned. 'init' is only provided because 'no_init' would break hot-reload. Please see https://github.com/godot-rust/gdext/issues/874");
+		Self { base: base, coroutine: Box::new(#[coroutine]||{ "".to_variant() }), poll_mode: PollMode::Process, last_yield: None, paused: false, calls_on_finish: Vec::new() }
+	}
+
 	fn process(&mut self, delta: f64) {
 		if !self.paused && self.poll_mode == PollMode::Process {
 			self.run(delta);
