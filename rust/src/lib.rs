@@ -54,6 +54,7 @@ pub mod prelude {
 	
 	pub use crate::start_coroutine::StartCoroutine;
 	pub use crate::builder::CoroutineBuilder;
+	pub use crate::builder::CoroutineStartMode;
 	
 	#[cfg(feature = "async")]
 	pub use crate::start_async_task::StartAsyncTask;

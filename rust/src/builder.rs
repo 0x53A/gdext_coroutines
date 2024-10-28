@@ -8,6 +8,16 @@ use crate::OnFinishCall;
 use crate::prelude::*;
 use crate::yielding::SpireYield;
 
+#[derive(Copy, Clone, PartialEq)]
+pub enum CoroutineStartMode {
+	/// the coroutine will be created in a paused state and needs to be unpaused at a later point.
+	Paused,
+	/// the coroutine will be created and attached to the godot node tree. It will be started on the next (physics_)process cycle.
+	OnNextProcess,
+	/// the coroutine will be created and immediatly run in the context of the caller.
+	Immediatly
+}
+
 /// Builder struct for customizing coroutine behavior.
 #[must_use]
 pub struct CoroutineBuilder<R: 'static + ToGodot = ()> {
@@ -19,7 +29,7 @@ pub struct CoroutineBuilder<R: 'static + ToGodot = ()> {
 	/// Godot [ProcessMode] which the coroutine should run in.
 	pub(crate) process_mode: ProcessMode,
 	/// Whether the coroutine should be started automatically.
-	pub(crate) auto_start: bool,
+	pub(crate) auto_start: CoroutineStartMode,
 	/// A list of callables to invoke when the coroutine finishes.
 	///
 	/// The callables will be invoked with the coroutine's return value as a Variant.
@@ -60,7 +70,7 @@ impl<R> CoroutineBuilder<R>
 			owner,
 			poll_mode: PollMode::Process,
 			process_mode: ProcessMode::INHERIT,
-			auto_start: true,
+			auto_start: CoroutineStartMode::OnNextProcess,
 			calls_on_finish: Vec::new(),
 			type_hint: std::marker::PhantomData,
 		}
@@ -131,7 +141,7 @@ impl<R> CoroutineBuilder<R>
 	/// Whether the coroutine should be started automatically upon spawning.
 	///
 	/// If false, you'll have to manually call [SpireCoroutine::resume] after spawning.
-	pub fn auto_start(self, auto_start: bool) -> Self {
+	pub fn auto_start(self, auto_start: CoroutineStartMode) -> Self {
 		Self {
 			auto_start,
 			..self
@@ -259,7 +269,7 @@ impl<R> CoroutineBuilder<R>
 					coroutine: self.f,
 					poll_mode: self.poll_mode,
 					last_yield: None,
-					paused: !self.auto_start,
+					paused: self.auto_start == CoroutineStartMode::Paused,
 					calls_on_finish: self.calls_on_finish,
 				}
 			});
@@ -271,6 +281,10 @@ impl<R> CoroutineBuilder<R>
 
 		let mut owner = self.owner;
 		owner.add_child(coroutine.clone());
+
+		if self.auto_start == CoroutineStartMode::Immediatly {
+			coroutine.bind_mut().run(0.0);
+		}
 
 		coroutine
 	}

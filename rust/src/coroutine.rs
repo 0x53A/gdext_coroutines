@@ -199,7 +199,7 @@ impl SpireCoroutine {
 		base.queue_free();
 	}
 
-	fn run(&mut self, delta_time: f64) {
+	pub(crate) fn run(&mut self, delta_time: f64) {
 		if let Some(result) = self.poll(delta_time) {
 			self.finish_with(result);
 		}
