@@ -280,7 +280,7 @@ impl<R> CoroutineBuilder<R>
 		coroutine.set_process_mode(self.process_mode);
 
 		let mut owner = self.owner;
-		owner.add_child(coroutine.clone());
+		owner.add_child(&coroutine);
 
 		if self.auto_start == CoroutineStartMode::Immediatly {
 			coroutine.bind_mut().run(0.0);
